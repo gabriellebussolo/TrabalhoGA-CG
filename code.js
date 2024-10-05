@@ -89,10 +89,12 @@ window.onload = function() {
     const uProjectionMatrix = gl.getUniformLocation(shaderProgram, 'uProjectionMatrix');
     gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
 
-    // Variables for position and rotation
+    // Variables for position
     let positionX = 0;
     let positionY = 0;
     let positionZ = 0;
+
+    // Variables for rotation
     let angleX = 0;
     let angleY = 0;
     let angleZ = 0;
@@ -114,7 +116,7 @@ window.onload = function() {
     let rotateDown = false;
     let rotateFront = false;
     let rotateBack = false;
-
+    
     // Handle keydown events to set movement flags
     window.addEventListener('keydown', function(event) {
         switch (event.key) {
