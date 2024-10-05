@@ -90,20 +90,30 @@ window.onload = function() {
     gl.uniformMatrix4fv(uProjectionMatrix, false, projectionMatrix);
 
     // Variables for position and rotation
-    let cameraX = 0;
-    let cameraY = 0;
-    let cameraZ = 0;
-    let angle = 0;
+    let positionX = 0;
+    let positionY = 0;
+    let positionZ = 0;
+    let angleX = 0;
+    let angleY = 0;
+    let angleZ = 0;
 
     const uModelViewMatrix = gl.getUniformLocation(shaderProgram, 'uModelViewMatrix');
 
-    // Flags for camera movement
+    // Flags for object movement (translacao)
     let moveLeft = false;
     let moveRight = false;
     let moveUp = false;
     let moveDown = false;
     let moveIn = false;
     let moveOut = false;
+
+    // Flags for object rotation
+    let rotateLeft = false;
+    let rotateRight = false;
+    let rotateUp = false;
+    let rotateDown = false;
+    let rotateFront = false;
+    let rotateBack = false;
 
     // Handle keydown events to set movement flags
     window.addEventListener('keydown', function(event) {
@@ -120,11 +130,29 @@ window.onload = function() {
             case 'ArrowDown':
                 moveDown = true;
                 break;
-            case 'w':
+            case 'i':
                 moveIn = true;
                 break;
-            case 's':
+            case 'o':
                 moveOut = true;
+                break;
+            case 'w':
+                rotateUp = true;
+                break;
+            case 's':
+                rotateDown = true;
+                break;
+            case 'a':
+                rotateLeft = true;
+                break;
+            case 'd':
+                rotateRight = true;
+                break;
+            case 'z':
+                rotateFront = true;
+                break;
+            case 'x':
+                rotateBack = true;
                 break;
         }
     });
@@ -144,29 +172,53 @@ window.onload = function() {
             case 'ArrowDown':
                 moveDown = false;
                 break;
-            case 'w':
+            case 'i':
                 moveIn = false;
                 break;
-            case 's':
+            case 'o':
                 moveOut = false;
+                break;
+            case 'w':
+                rotateUp = false;
+                break;
+            case 's':
+                rotateDown = false;
+                break;
+            case 'a':
+                rotateLeft = false;
+                break;
+            case 'd':
+                rotateRight = false;
+                break;
+            case 'z':
+                rotateFront = false;
+                break;
+            case 'x':
+                rotateBack = false;
                 break;
         }
     });
 
     function animate() {
-        if (moveLeft) cameraX -= 0.1;
-        if (moveRight) cameraX += 0.1;
-        if (moveUp) cameraY += 0.1;
-        if (moveDown) cameraY -= 0.1;
-        if (moveIn) cameraZ += 0.1;
-        if (moveOut) cameraZ -= 0.1;
+        if (moveLeft) positionX -= 0.1;
+        if (moveRight) positionX += 0.1;
+        if (moveUp) positionY += 0.1;
+        if (moveDown) positionY -= 0.1;
+        if (moveIn) positionZ += 0.1;
+        if (moveOut) positionZ -= 0.1;
 
-        angle += 0.01; // Adjust rotation speed here
+        if (rotateLeft) angleY -= 0.1;
+        if (rotateRight) angleY += 0.1;
+        if (rotateUp) angleX += 0.1;
+        if (rotateDown) angleX -= 0.1;
+        if (rotateFront) angleZ += 0.1;
+        if (rotateBack) angleZ -= 0.1;
 
         const modelViewMatrix = mat4.create();
-        mat4.translate(modelViewMatrix, modelViewMatrix, [cameraX, cameraY, cameraZ - 5]);
-        mat4.rotateX(modelViewMatrix, modelViewMatrix, angle);
-        mat4.rotateY(modelViewMatrix, modelViewMatrix, angle);
+        mat4.translate(modelViewMatrix, modelViewMatrix, [positionX, positionY, positionZ - 5]);
+        mat4.rotateX(modelViewMatrix, modelViewMatrix, angleX);
+        mat4.rotateY(modelViewMatrix, modelViewMatrix, angleY);
+        mat4.rotateZ(modelViewMatrix, modelViewMatrix, angleZ);
 
         gl.uniformMatrix4fv(uModelViewMatrix, false, modelViewMatrix);
 
