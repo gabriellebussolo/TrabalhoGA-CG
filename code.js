@@ -200,6 +200,7 @@ window.onload = function() {
     });
 
     function animate() {
+        // Move the object
         if (moveLeft) positionX -= 0.1;
         if (moveRight) positionX += 0.1;
         if (moveUp) positionY += 0.1;
@@ -207,6 +208,7 @@ window.onload = function() {
         if (moveIn) positionZ += 0.1;
         if (moveOut) positionZ -= 0.1;
 
+        // Rotate the object
         if (rotateLeft) angleY -= 0.1;
         if (rotateRight) angleY += 0.1;
         if (rotateUp) angleX -= 0.1;
