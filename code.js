@@ -209,8 +209,8 @@ window.onload = function() {
 
         if (rotateLeft) angleY -= 0.1;
         if (rotateRight) angleY += 0.1;
-        if (rotateUp) angleX += 0.1;
-        if (rotateDown) angleX -= 0.1;
+        if (rotateUp) angleX -= 0.1;
+        if (rotateDown) angleX += 0.1;
         if (rotateFront) angleZ += 0.1;
         if (rotateBack) angleZ -= 0.1;
 
