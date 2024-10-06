@@ -104,31 +104,100 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('Shader program initialized');
 
-  const mesh = loadMesh(gl);
+  // Object structure and initial object load
+  const objects = [];
 
-  console.log('Mesh loaded:', mesh);
+  class SceneObject {
+    constructor(gl, objStr) {
+      this.mesh = new OBJ.Mesh(objStr);
+      OBJ.initMeshBuffers(gl, this.mesh);
+      this.rotation = [0, 0, 0];
+      this.position = [0, 0, 0];
+      this.scale = [1, 1, 1];
+    }
+  }
 
-  // variables for rotation
-  let angleX = 0,
-    angleY = 0,
-    angleZ = 0;
+  // Example OBJ string data
+  const objStr1 = [
+    'v 1.0 -1.0  1.0',
+    'v 1.0 -1.0 -1.0',
+    'v -1.0 -1.0 -1.0',
+    'v -1.0 -1.0  1.0',
+    'v 1.0  1.0  1.0',
+    'v 1.0  1.0 -1.0',
+    'v -1.0  1.0 -1.0',
+    'v -1.0  1.0  1.0',
+    'vn 0.0 -1.0 0.0',
+    'vn 0.0  1.0 0.0',
+    'vn 1.0  0.0 0.0',
+    'vn -1.0  0.0 0.0',
+    'vn 0.0  0.0 1.0',
+    'vn 0.0  0.0 -1.0',
+    'f 1//1 2//1 3//1',
+    'f 1//1 3//1 4//1',
+    'f 5//2 8//2 7//2',
+    'f 5//2 7//2 6//2',
+    'f 1//3 5//3 6//3',
+    'f 1//3 6//3 2//3',
+    'f 2//6 6//6 7//6',
+    'f 2//6 7//6 3//6',
+    'f 3//4 7//4 8//4',
+    'f 3//4 8//4 4//4',
+    'f 4//5 8//5 5//5',
+    'f 4//5 5//5 1//5',
+  ].join('\n');
 
-  // variables for translation
-  let positionX = 0,
-    positionY = 0,
-    positionZ = 0;
+  const objStr2 = [
+    'v 3.0 -1.0  1.0',
+    'v 3.0 -1.0 -1.0',
+    'v 1.0 -1.0 -1.0',
+    'v 1.0 -1.0  1.0',
+    'v 3.0  1.0  1.0',
+    'v 3.0  1.0 -1.0',
+    'v 1.0  1.0 -1.0',
+    'v 1.0  1.0  1.0',
+    'vn 0.0 -1.0 0.0',
+    'vn 0.0  1.0 0.0',
+    'vn 1.0  0.0 0.0',
+    'vn -1.0  0.0 0.0',
+    'vn 0.0  0.0 1.0',
+    'vn 0.0  0.0 -1.0',
+    'f 1//1 2//1 3//1',
+    'f 1//1 3//1 4//1',
+    'f 5//2 8//2 7//2',
+    'f 5//2 7//2 6//2',
+    'f 1//3 5//3 6//3',
+    'f 1//3 6//3 2//3',
+    'f 2//6 6//6 7//6',
+    'f 2//6 7//6 3//6',
+    'f 3//4 7//4 8//4',
+    'f 3//4 8//4 4//4',
+    'f 4//5 8//5 5//5',
+    'f 4//5 5//5 1//5',
+  ].join('\n');
 
-  // variables for scale
-  let scaleFactorX = 1.0,
-    scaleFactorY = 1.0,
-    scaleFactorZ = 1.0;
+  objects.push(new SceneObject(gl, objStr1));
+  objects.push(new SceneObject(gl, objStr2));
 
-  // Variables for camera position movement
+  console.log('Objects loaded:', objects);
+
+  let selectedObject = 0;
+
+  // Listen for key presses to change selected object
+  document.addEventListener('keydown', (event) => {
+    if (event.code === 'ArrowRight') {
+      selectedObject = (selectedObject + 1) % objects.length;
+    } else if (event.code === 'ArrowLeft') {
+      selectedObject = (selectedObject - 1 + objects.length) % objects.length;
+    }
+    console.log(`Selected Object: ${selectedObject}`);
+  });
+
+  // Variables for camera position and view movement
   let cameraPosX = 0.0,
     cameraPosY = 0.0,
     cameraPosZ = 3.0;
 
-  // Varibles for camera view movement
   let cameraViewX = 0.0,
     cameraViewY = 0.0,
     cameraViewZ = 0.0;
@@ -138,34 +207,35 @@ document.addEventListener('DOMContentLoaded', () => {
   sliders.forEach((slider) => {
     slider.addEventListener('input', function () {
       const sliderId = slider.id;
-      if (slider.id == 'moveX') positionX = slider.value;
-      if (slider.id == 'moveY') positionY = slider.value;
-      if (slider.id == 'moveZ') positionZ = slider.value;
-      if (slider.id == 'rotateX') angleX = slider.value;
-      if (slider.id == 'rotateY') angleY = slider.value;
-      if (slider.id == 'rotateZ') angleZ = slider.value;
-      if (slider.id == 'scaleX') scaleFactorX = slider.value;
-      if (slider.id == 'scaleY') scaleFactorY = slider.value;
-      if (slider.id == 'scaleZ') scaleFactorZ = slider.value;
-      if (slider.id == "cameraPosX") cameraPosX = slider.value;
-      if (slider.id == "cameraPosY") cameraPosY = slider.value;
-      if (slider.id == "cameraPosZ") cameraPosZ = slider.value;
-      if (slider.id == "cameraViewX") cameraViewX = slider.value;
-      if (slider.id == "cameraViewY") cameraViewY = slider.value;
-      if (slider.id == "cameraViewZ") cameraViewZ = slider.value;
+      const obj = objects[selectedObject];
+      if (sliderId === 'moveX') obj.position[0] = parseFloat(slider.value);
+      if (sliderId === 'moveY') obj.position[1] = parseFloat(slider.value);
+      if (sliderId === 'moveZ') obj.position[2] = parseFloat(slider.value);
+      if (sliderId === 'rotateX') obj.rotation[0] = parseFloat(slider.value);
+      if (sliderId === 'rotateY') obj.rotation[1] = parseFloat(slider.value);
+      if (sliderId === 'rotateZ') obj.rotation[2] = parseFloat(slider.value);
+      if (sliderId === 'scaleX') obj.scale[0] = parseFloat(slider.value);
+      if (sliderId === 'scaleY') obj.scale[1] = parseFloat(slider.value);
+      if (sliderId === 'scaleZ') obj.scale[2] = parseFloat(slider.value);
+      if (sliderId == 'cameraPosX') cameraPosX = parseFloat(slider.value);
+      if (sliderId == 'cameraPosY') cameraPosY = parseFloat(slider.value);
+      if (sliderId == 'cameraPosZ') cameraPosZ = parseFloat(slider.value);
+      if (sliderId == 'cameraViewX') cameraViewX = parseFloat(slider.value);
+      if (sliderId == 'cameraViewY') cameraViewY = parseFloat(slider.value);
+      if (sliderId == 'cameraViewZ') cameraViewZ = parseFloat(slider.value);
     });
   });
 
-  // Definir as propriedades da luz e do material
+  // Set light properties
   gl.useProgram(programInfo.program);
 
-  const lightPosition = [2.0, 2.0, 2.0]; // Posição da luz no espaço da visualização
-  const lightColor = [1.0, 1.0, 1.0]; // Cor da luz branca
+  const lightPosition = [2.0, 2.0, 2.0]; // Light position in view space
+  const lightColor = [1.0, 1.0, 1.0]; // White light color
 
-  const objectColor = [1.0, 0.5, 0.31]; // Cor do objeto
-  const shininess = 32.0; // Fator de brilho
+  const objectColor = [1.0, 0.5, 0.31]; // Object color
+  const shininess = 32.0; // Shininess factor
 
-  // Definir uniformes
+  // Set uniforms
   gl.uniform3fv(programInfo.uniformLocations.lightPosition, lightPosition);
   gl.uniform3fv(programInfo.uniformLocations.lightColor, lightColor);
   gl.uniform3fv(programInfo.uniformLocations.objectColor, objectColor);
@@ -175,16 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     drawScene(
       gl,
       programInfo,
-      mesh,
-      angleX,
-      angleY,
-      angleZ,
-      positionX,
-      positionY,
-      positionZ,
-      scaleFactorX,
-      scaleFactorY,
-      scaleFactorZ,
+      objects,
       cameraPosX,
       cameraPosY,
       cameraPosZ,
@@ -235,93 +296,10 @@ function loadShader(gl, type, source) {
   return shader;
 }
 
-function loadMesh(gl) {
-  console.log('Loading mesh using OBJ loader...');
-
-  // TODO: we should read this from a .obj file
-  const objStr = [
-    'v  1.0 -1.0  1.0',
-    'v  1.0 -1.0 -1.0',
-    'v -1.0 -1.0 -1.0',
-    'v -1.0 -1.0  1.0',
-    'v  1.0  1.0  1.0',
-    'v  1.0  1.0 -1.0',
-    'v -1.0  1.0 -1.0',
-    'v -1.0  1.0  1.0',
-
-    'v  3.5 -1.0  1.0',
-    'v  3.5 -1.0 -1.0',
-    'v  1.5 -1.0 -1.0',
-    'v  1.5 -1.0  1.0',
-    'v  3.5  1.0  1.0',
-    'v  3.5  1.0 -1.0',
-    'v  1.5  1.0 -1.0',
-    'v  1.5  1.0  1.0',
-
-    'vn  0.0 -1.0  0.0',
-    'vn  0.0  1.0  0.0',
-    'vn  1.0  0.0  0.0',
-    'vn -1.0  0.0  0.0',
-    'vn  0.0  0.0  1.0',
-    'vn  0.0  0.0 -1.0',
-
-    // # Faces for first cube
-    'f 1//1 2//1 3//1',
-    'f 1//1 3//1 4//1',
-    'f 5//2 8//2 7//2',
-    'f 5//2 7//2 6//2',
-    'f 1//3 5//3 6//3',
-    'f 1//3 6//3 2//3',
-    'f 2//6 6//6 7//6',
-    'f 2//6 7//6 3//6',
-    'f 3//4 7//4 8//4',
-    'f 3//4 8//4 4//4',
-    'f 4//5 8//5 5//5',
-    'f 4//5 5//5 1//5',
-
-    // # Faces for second cube
-    'f 9//1 10//1 11//1',
-    'f 9//1 11//1 12//1',
-    'f 13//2 16//2 15//2',
-    'f 13//2 15//2 14//2',
-    'f 9//3 13//3 14//3',
-    'f 9//3 14//3 10//3',
-    'f 10//6 14//6 15//6',
-    'f 10//6 15//6 11//6',
-    'f 11//4 15//4 16//4',
-    'f 11//4 16//4 12//4',
-    'f 12//5 16//5 13//5',
-    'f 12//5 13//5 9//5',
-  ].join('\n');
-
-  if (typeof OBJ === 'undefined') {
-    console.error(
-      'OBJ loader not defined, seems the library did not load correctly.'
-    );
-    return null;
-  }
-
-  const objMesh = new OBJ.Mesh(objStr);
-  OBJ.initMeshBuffers(gl, objMesh);
-
-  console.log('Mesh loaded via OBJ loader:', objMesh);
-
-  return objMesh;
-}
-
 function drawScene(
   gl,
   programInfo,
-  mesh,
-  angleX,
-  angleY,
-  angleZ,
-  positionX,
-  positionY,
-  positionZ,
-  scaleFactorX,
-  scaleFactorY,
-  scaleFactorZ,
+  objects,
   cameraPosX,
   cameraPosY,
   cameraPosZ,
@@ -344,96 +322,105 @@ function drawScene(
     100.0
   );
 
-  const modelViewMatrix = mat4.create();
-  mat4.translate(modelViewMatrix, modelViewMatrix, [
-    positionX,
-    positionY,
-    positionZ - 5,
-  ]);
-
-  mat4.rotateX(modelViewMatrix, modelViewMatrix, (angleX * Math.PI) / 180.0);
-  mat4.rotateY(modelViewMatrix, modelViewMatrix, (angleY * Math.PI) / 180.0);
-  mat4.rotateZ(modelViewMatrix, modelViewMatrix, (angleZ * Math.PI) / 180.0);
-
-  mat4.scale(modelViewMatrix, modelViewMatrix, [
-    scaleFactorX,
-    scaleFactorY,
-    scaleFactorZ,
-  ]);
-
   const viewMatrix = mat4.create();
-  mat4.lookAt(viewMatrix, [cameraPosX, cameraPosY, cameraPosZ], [cameraViewX, cameraViewY, cameraViewZ], [0, 1, 0]);
-
-  const normalMatrix = mat4.create();
-  mat4.invert(normalMatrix, modelViewMatrix);
-  mat4.transpose(normalMatrix, normalMatrix);
+  mat4.lookAt(
+    viewMatrix,
+    [cameraPosX, cameraPosY, cameraPosZ],
+    [cameraViewX, cameraViewY, cameraViewZ],
+    [0, 1, 0]
+  );
 
   gl.useProgram(programInfo.program);
-
   gl.uniformMatrix4fv(
     programInfo.uniformLocations.projectionMatrix,
     false,
     projectionMatrix
   );
   gl.uniformMatrix4fv(
-    programInfo.uniformLocations.modelViewMatrix,
-    false,
-    modelViewMatrix
-  );
-  gl.uniformMatrix4fv(
     programInfo.uniformLocations.viewMatrix,
     false,
     viewMatrix
   );
-  gl.uniformMatrix4fv(
-    programInfo.uniformLocations.normalMatrix,
-    false,
-    normalMatrix
-  );
 
-  const viewPosition = [0.0, 0.0, 0.0];
-  gl.uniform3fv(programInfo.uniformLocations.viewPosition, viewPosition);
+  objects.forEach((obj, index) => {
+    const modelViewMatrix = mat4.create();
+    mat4.translate(modelViewMatrix, modelViewMatrix, obj.position);
 
-  // Configurar os buffers de posição
-  {
-    const vertexPosition = mesh.vertexBuffer;
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosition);
-    gl.vertexAttribPointer(
-      programInfo.attribLocations.vertexPosition,
-      3,
-      gl.FLOAT,
+    mat4.rotateX(
+      modelViewMatrix,
+      modelViewMatrix,
+      (obj.rotation[0] * Math.PI) / 180.0
+    );
+    mat4.rotateY(
+      modelViewMatrix,
+      modelViewMatrix,
+      (obj.rotation[1] * Math.PI) / 180.0
+    );
+    mat4.rotateZ(
+      modelViewMatrix,
+      modelViewMatrix,
+      (obj.rotation[2] * Math.PI) / 180.0
+    );
+
+    mat4.scale(modelViewMatrix, modelViewMatrix, obj.scale);
+
+    const normalMatrix = mat4.create();
+    mat4.invert(normalMatrix, modelViewMatrix);
+    mat4.transpose(normalMatrix, normalMatrix);
+
+    gl.uniformMatrix4fv(
+      programInfo.uniformLocations.modelViewMatrix,
       false,
-      0,
-      0
+      modelViewMatrix
     );
-    gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
-  }
-
-  // Configurar os buffers de normal
-  {
-    const vertexNormal = mesh.normalBuffer;
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormal);
-    gl.vertexAttribPointer(
-      programInfo.attribLocations.vertexNormal,
-      3,
-      gl.FLOAT,
+    gl.uniformMatrix4fv(
+      programInfo.uniformLocations.normalMatrix,
       false,
-      0,
-      0
+      normalMatrix
     );
-    gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
-  }
 
-  {
-    const indexBuffer = mesh.indexBuffer;
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.drawElements(
-      gl.TRIANGLES,
-      mesh.indexBuffer.numItems,
-      gl.UNSIGNED_SHORT,
-      0
-    );
-  }
+    // Configure position buffers
+    {
+      const vertexPosition = obj.mesh.vertexBuffer;
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosition);
+      gl.vertexAttribPointer(
+        programInfo.attribLocations.vertexPosition,
+        3,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+      gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
+    }
+
+    // Configure normal buffers
+    {
+      const vertexNormal = obj.mesh.normalBuffer;
+      gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormal);
+      gl.vertexAttribPointer(
+        programInfo.attribLocations.vertexNormal,
+        3,
+        gl.FLOAT,
+        false,
+        0,
+        0
+      );
+      gl.enableVertexAttribArray(programInfo.attribLocations.vertexNormal);
+    }
+
+    // Draw the object
+    {
+      const indexBuffer = obj.mesh.indexBuffer;
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+      gl.drawElements(
+        gl.TRIANGLES,
+        obj.mesh.indexBuffer.numItems,
+        gl.UNSIGNED_SHORT,
+        0
+      );
+    }
+  });
 }
 
 function resizeCanvas(canvas) {
