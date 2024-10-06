@@ -80,21 +80,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
   const programInfo = {
-      program: shaderProgram,
-      attribLocations: {
-          vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-          vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
-      },
-      uniformLocations: {
-          projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-          modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-          normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
-          lightPosition: gl.getUniformLocation(shaderProgram, 'uLightPosition'),
-          lightColor: gl.getUniformLocation(shaderProgram, 'uLightColor'),
-          viewPosition: gl.getUniformLocation(shaderProgram, 'uViewPosition'),
-          objectColor: gl.getUniformLocation(shaderProgram, 'uObjectColor'),
-          shininess: gl.getUniformLocation(shaderProgram, 'uShininess'),
-      },
+    program: shaderProgram,
+    attribLocations: {
+      vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+      vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
+    },
+    uniformLocations: {
+      projectionMatrix: gl.getUniformLocation(
+        shaderProgram,
+        'uProjectionMatrix'
+      ),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+      normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
+      lightPosition: gl.getUniformLocation(shaderProgram, 'uLightPosition'),
+      lightColor: gl.getUniformLocation(shaderProgram, 'uLightColor'),
+      viewPosition: gl.getUniformLocation(shaderProgram, 'uViewPosition'),
+      objectColor: gl.getUniformLocation(shaderProgram, 'uObjectColor'),
+      shininess: gl.getUniformLocation(shaderProgram, 'uShininess'),
+    },
   };
 
   console.log('Shader program initialized');
@@ -105,31 +108,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // variables for rotation
   let angleX = 0,
-      angleY = 0,
-      angleZ = 0;
+    angleY = 0,
+    angleZ = 0;
   // variables for translation
   let positionX = 0,
-      positionY = 0,
-      positionZ = 0;
+    positionY = 0,
+    positionZ = 0;
   // variables for scale
   let scaleFactorX = 1.0,
-      scaleFactorY = 1.0,
-      scaleFactorZ = 1.0;
+    scaleFactorY = 1.0,
+    scaleFactorZ = 1.0;
 
   const sliders = document.querySelectorAll("input[type='range']");
-        
-  sliders.forEach(slider => {
-    slider.addEventListener("input", function() {
-        const sliderId = slider.id;
-        if (slider.id == "moveX") positionX = slider.value;
-        if (slider.id == "moveY") positionY = slider.value;
-        if (slider.id == "moveZ") positionZ = slider.value;
-        if (slider.id == "rotateX") angleX = slider.value;
-        if (slider.id == "rotateY") angleY = slider.value;
-        if (slider.id == "rotateZ") angleZ = slider.value;
-        if (slider.id == "scaleX") scaleFactorX = slider.value;
-        if (slider.id == "scaleY") scaleFactorY = slider.value;
-        if (slider.id == "scaleZ") scaleFactorZ = slider.value;
+
+  sliders.forEach((slider) => {
+    slider.addEventListener('input', function () {
+      const sliderId = slider.id;
+      if (slider.id == 'moveX') positionX = slider.value;
+      if (slider.id == 'moveY') positionY = slider.value;
+      if (slider.id == 'moveZ') positionZ = slider.value;
+      if (slider.id == 'rotateX') angleX = slider.value;
+      if (slider.id == 'rotateY') angleY = slider.value;
+      if (slider.id == 'rotateZ') angleZ = slider.value;
+      if (slider.id == 'scaleX') scaleFactorX = slider.value;
+      if (slider.id == 'scaleY') scaleFactorY = slider.value;
+      if (slider.id == 'scaleZ') scaleFactorZ = slider.value;
     });
   });
 
@@ -137,10 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
   gl.useProgram(programInfo.program);
 
   const lightPosition = [2.0, 2.0, 2.0]; // Posição da luz no espaço da visualização
-  const lightColor = [1.0, 1.0, 1.0];    // Cor da luz branca
+  const lightColor = [1.0, 1.0, 1.0]; // Cor da luz branca
 
-  const objectColor = [1.0, 0.5, 0.31];  // Cor do objeto
-  const shininess = 32.0;                // Fator de brilho
+  const objectColor = [1.0, 0.5, 0.31]; // Cor do objeto
+  const shininess = 32.0; // Fator de brilho
 
   // Definir uniformes
   gl.uniform3fv(programInfo.uniformLocations.lightPosition, lightPosition);
@@ -149,7 +152,20 @@ document.addEventListener('DOMContentLoaded', () => {
   gl.uniform1f(programInfo.uniformLocations.shininess, shininess);
 
   function render() {
-    drawScene(gl, programInfo, mesh, angleX, angleY, angleZ, positionX, positionY, positionZ, scaleFactorX, scaleFactorY, scaleFactorZ);
+    drawScene(
+      gl,
+      programInfo,
+      mesh,
+      angleX,
+      angleY,
+      angleZ,
+      positionX,
+      positionY,
+      positionZ,
+      scaleFactorX,
+      scaleFactorY,
+      scaleFactorZ
+    );
     requestAnimationFrame(render);
   }
 
@@ -274,13 +290,21 @@ function drawScene(
   );
 
   const modelViewMatrix = mat4.create();
-  mat4.translate(modelViewMatrix, modelViewMatrix, [positionX, positionY, positionZ - 5]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [
+    positionX,
+    positionY,
+    positionZ - 5,
+  ]);
 
   mat4.rotateX(modelViewMatrix, modelViewMatrix, (angleX * Math.PI) / 180.0);
   mat4.rotateY(modelViewMatrix, modelViewMatrix, (angleY * Math.PI) / 180.0);
   mat4.rotateZ(modelViewMatrix, modelViewMatrix, (angleZ * Math.PI) / 180.0);
 
-  mat4.scale(modelViewMatrix, modelViewMatrix, [scaleFactorX, scaleFactorY, scaleFactorZ]);
+  mat4.scale(modelViewMatrix, modelViewMatrix, [
+    scaleFactorX,
+    scaleFactorY,
+    scaleFactorZ,
+  ]);
 
   const normalMatrix = mat4.create();
   mat4.invert(normalMatrix, modelViewMatrix);
@@ -338,9 +362,14 @@ function drawScene(
   }
 
   {
-   const indexBuffer = mesh.indexBuffer;
+    const indexBuffer = mesh.indexBuffer;
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.drawElements(gl.TRIANGLES, mesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(
+      gl.TRIANGLES,
+      mesh.indexBuffer.numItems,
+      gl.UNSIGNED_SHORT,
+      0
+    );
   }
 }
 
