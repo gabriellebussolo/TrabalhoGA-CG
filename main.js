@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       uniform vec3 uObjectColor;
       uniform float uShininess;
+      uniform bool uIsSelected; 
 
       void main(void) {
           vec3 norm = normalize(vNormal);
@@ -73,8 +74,14 @@ document.addEventListener('DOMContentLoaded', () => {
           float spec = pow(max(dot(viewDir, reflectDir), 0.0), uShininess);
           vec3 specular = specularStrength * spec * uLightColor;
 
+          // Cor do objeto, destaque se for o selecionado
+          vec3 finalColor = uObjectColor;
+          if (uIsSelected) {
+              finalColor = vec3(1.0, 0.0, 0.0); // Cor vermelha para o objeto selecionado
+          }
+
           // Combinação dos componentes
-          vec3 result = (ambient + diffuse + specular) * uObjectColor;
+          vec3 result = (ambient + diffuse + specular) * finalColor;
           gl_FragColor = vec4(result, 1.0);
       }
   `;
@@ -99,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       viewPosition: gl.getUniformLocation(shaderProgram, 'uViewPosition'),
       objectColor: gl.getUniformLocation(shaderProgram, 'uObjectColor'),
       shininess: gl.getUniformLocation(shaderProgram, 'uShininess'),
+      isSelected: gl.getUniformLocation(shaderProgram, 'uIsSelected'), // Uniform de seleção
     },
   };
 
@@ -251,7 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
       cameraPosZ,
       cameraViewX,
       cameraViewY,
-      cameraViewZ
+      cameraViewZ,
+      selectedObject
     );
     requestAnimationFrame(render);
   }
@@ -287,6 +296,24 @@ function loadShader(gl, type, source) {
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     console.error(
+      'Erro na compilação do shader: ' + gl.getShaderInfoLog(shader)
+    );
+    gl.deleteShader(shader);
+    return null;
+  }
+
+  return shader;
+}
+
+
+function loadShader(gl, type, source) {
+  const shader = gl.createShader(type);
+
+  gl.shaderSource(shader, source);
+  gl.compileShader(shader);
+
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error(
       'An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader)
     );
     gl.deleteShader(shader);
@@ -305,7 +332,8 @@ function drawScene(
   cameraPosZ,
   cameraViewX,
   cameraViewY,
-  cameraViewZ
+  cameraViewZ,
+  selectedObject
 ) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
@@ -343,6 +371,9 @@ function drawScene(
   );
 
   objects.forEach((obj, index) => {
+    const isSelected = index === selectedObject;
+    gl.uniform1i(programInfo.uniformLocations.isSelected, isSelected ? 1 : 0); 
+
     const modelViewMatrix = mat4.create();
     mat4.translate(modelViewMatrix, modelViewMatrix, obj.position);
 
