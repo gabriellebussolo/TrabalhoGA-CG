@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
         uniform mat4 uNormalMatrix;
         uniform mat4 uModelViewMatrix;
         uniform mat4 uProjectionMatrix;
+        uniform mat4 uViewMatrix;
 
         varying vec3 vNormal;
         varying vec3 vFragPos;
@@ -35,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
           vec4 fragPos = uModelViewMatrix * aVertexPosition;
           vFragPos = fragPos.xyz;
           vNormal = mat3(uNormalMatrix) * aVertexNormal;
-          gl_Position = uProjectionMatrix * fragPos;
+          gl_Position = uProjectionMatrix * uViewMatrix * fragPos;
       }
   `;
 
@@ -91,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'uProjectionMatrix'
       ),
       modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+      viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
       normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
       lightPosition: gl.getUniformLocation(shaderProgram, 'uLightPosition'),
       lightColor: gl.getUniformLocation(shaderProgram, 'uLightColor'),
@@ -110,14 +112,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let angleX = 0,
     angleY = 0,
     angleZ = 0;
+
   // variables for translation
   let positionX = 0,
     positionY = 0,
     positionZ = 0;
+
   // variables for scale
   let scaleFactorX = 1.0,
     scaleFactorY = 1.0,
     scaleFactorZ = 1.0;
+
+  // Variables for camera position movement
+  let cameraPosX = 0.0,
+    cameraPosY = 0.0,
+    cameraPosZ = 3.0;
+
+  // Varibles for camera view movement
+  let cameraViewX = 0.0,
+    cameraViewY = 0.0,
+    cameraViewZ = 0.0;
 
   const sliders = document.querySelectorAll("input[type='range']");
 
@@ -133,6 +147,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (slider.id == 'scaleX') scaleFactorX = slider.value;
       if (slider.id == 'scaleY') scaleFactorY = slider.value;
       if (slider.id == 'scaleZ') scaleFactorZ = slider.value;
+      if (slider.id == "cameraPosX") cameraPosX = slider.value;
+      if (slider.id == "cameraPosY") cameraPosY = slider.value;
+      if (slider.id == "cameraPosZ") cameraPosZ = slider.value;
+      if (slider.id == "cameraViewX") cameraViewX = slider.value;
+      if (slider.id == "cameraViewY") cameraViewY = slider.value;
+      if (slider.id == "cameraViewZ") cameraViewZ = slider.value;
     });
   });
 
@@ -164,7 +184,13 @@ document.addEventListener('DOMContentLoaded', () => {
       positionZ,
       scaleFactorX,
       scaleFactorY,
-      scaleFactorZ
+      scaleFactorZ,
+      cameraPosX,
+      cameraPosY,
+      cameraPosZ,
+      cameraViewX,
+      cameraViewY,
+      cameraViewZ
     );
     requestAnimationFrame(render);
   }
@@ -295,7 +321,13 @@ function drawScene(
   positionZ,
   scaleFactorX,
   scaleFactorY,
-  scaleFactorZ
+  scaleFactorZ,
+  cameraPosX,
+  cameraPosY,
+  cameraPosZ,
+  cameraViewX,
+  cameraViewY,
+  cameraViewZ
 ) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
@@ -329,6 +361,9 @@ function drawScene(
     scaleFactorZ,
   ]);
 
+  const viewMatrix = mat4.create();
+  mat4.lookAt(viewMatrix, [cameraPosX, cameraPosY, cameraPosZ], [cameraViewX, cameraViewY, cameraViewZ], [0, 1, 0]);
+
   const normalMatrix = mat4.create();
   mat4.invert(normalMatrix, modelViewMatrix);
   mat4.transpose(normalMatrix, normalMatrix);
@@ -344,6 +379,11 @@ function drawScene(
     programInfo.uniformLocations.modelViewMatrix,
     false,
     modelViewMatrix
+  );
+  gl.uniformMatrix4fv(
+    programInfo.uniformLocations.viewMatrix,
+    false,
+    viewMatrix
   );
   gl.uniformMatrix4fv(
     programInfo.uniformLocations.normalMatrix,
