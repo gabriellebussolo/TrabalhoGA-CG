@@ -103,46 +103,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('Mesh loaded:', mesh);
 
-  let xRot = 0,
-      yRot = 0,
-      zRot = 0;
-  let xTrans = 0,
-      yTrans = 0,
-      zTrans = -6;
+  // variables for rotation
+  let angleX = 0,
+      angleY = 0,
+      angleZ = 0;
+  // variables for translation
+  let positionX = 0,
+      positionY = 0,
+      positionZ = 0;
+  // variables for scale
+  let scaleFactorX = 1.0,
+      scaleFactorY = 1.0,
+      scaleFactorZ = 1.0;
 
-  document.addEventListener('keydown', (event) => {
-    switch (event.code) {
-      case 'ArrowLeft':
-        yRot -= 0.1;
-        break;
-      case 'ArrowRight':
-        yRot += 0.1;
-        break;
-      case 'ArrowUp':
-        xRot -= 0.1;
-        break;
-      case 'ArrowDown':
-        xRot += 0.1;
-        break;
-      case 'KeyW':
-        yTrans += 0.1;
-        break;
-      case 'KeyS':
-        yTrans -= 0.1;
-        break;
-      case 'KeyA':
-        xTrans -= 0.1;
-        break;
-      case 'KeyD':
-        xTrans += 0.1;
-        break;
-      case 'KeyI':
-        zTrans += 0.1;
-        break;
-      case 'KeyO':
-        zTrans -= 0.1;
-        break;
-    }
+  const sliders = document.querySelectorAll("input[type='range']");
+        
+  sliders.forEach(slider => {
+    slider.addEventListener("input", function() {
+        const sliderId = slider.id;
+        if (slider.id == "moveX") positionX = slider.value;
+        if (slider.id == "moveY") positionY = slider.value;
+        if (slider.id == "moveZ") positionZ = slider.value;
+        if (slider.id == "rotateX") angleX = slider.value;
+        if (slider.id == "rotateY") angleY = slider.value;
+        if (slider.id == "rotateZ") angleZ = slider.value;
+        if (slider.id == "scaleX") scaleFactorX = slider.value;
+        if (slider.id == "scaleY") scaleFactorY = slider.value;
+        if (slider.id == "scaleZ") scaleFactorZ = slider.value;
+    });
   });
 
   // Definir as propriedades da luz e do material
@@ -161,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
   gl.uniform1f(programInfo.uniformLocations.shininess, shininess);
 
   function render() {
-    drawScene(gl, programInfo, mesh, xRot, yRot, zRot, xTrans, yTrans, zTrans);
+    drawScene(gl, programInfo, mesh, angleX, angleY, angleZ, positionX, positionY, positionZ, scaleFactorX, scaleFactorY, scaleFactorZ);
     requestAnimationFrame(render);
   }
 
@@ -260,12 +248,15 @@ function drawScene(
   gl,
   programInfo,
   mesh,
-  xRot,
-  yRot,
-  zRot,
-  xTrans,
-  yTrans,
-  zTrans
+  angleX,
+  angleY,
+  angleZ,
+  positionX,
+  positionY,
+  positionZ,
+  scaleFactorX,
+  scaleFactorY,
+  scaleFactorZ
 ) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.clearDepth(1.0);
@@ -283,11 +274,13 @@ function drawScene(
   );
 
   const modelViewMatrix = mat4.create();
-  mat4.translate(modelViewMatrix, modelViewMatrix, [xTrans, yTrans, zTrans]);
+  mat4.translate(modelViewMatrix, modelViewMatrix, [positionX, positionY, positionZ - 5]);
 
-  mat4.rotate(modelViewMatrix, modelViewMatrix, xRot, [1, 0, 0]);
-  mat4.rotate(modelViewMatrix, modelViewMatrix, yRot, [0, 1, 0]);
-  mat4.rotate(modelViewMatrix, modelViewMatrix, zRot, [0, 0, 1]);
+  mat4.rotateX(modelViewMatrix, modelViewMatrix, (angleX * Math.PI) / 180.0);
+  mat4.rotateY(modelViewMatrix, modelViewMatrix, (angleY * Math.PI) / 180.0);
+  mat4.rotateZ(modelViewMatrix, modelViewMatrix, (angleZ * Math.PI) / 180.0);
+
+  mat4.scale(modelViewMatrix, modelViewMatrix, [scaleFactorX, scaleFactorY, scaleFactorZ]);
 
   const normalMatrix = mat4.create();
   mat4.invert(normalMatrix, modelViewMatrix);
