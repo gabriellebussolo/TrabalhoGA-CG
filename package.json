@@ -3,9 +3,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "dependencies": {
-    "webgl-obj-loader": "^2.0.8"
-  },
   "devDependencies": {
     "prettier": "^3.3.3"
   }
