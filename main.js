@@ -204,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Variables for camera position and view movement
   let cameraPosX = 0.0,
     cameraPosY = 0.0,
-    cameraPosZ = 3.0;
+    cameraPosZ = 10.0;
 
   let cameraViewX = 0.0,
     cameraViewY = 0.0,
