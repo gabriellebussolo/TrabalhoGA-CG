@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('DOM fully loaded and parsed');
 
   const canvas = document.getElementById('glcanvas');
+  resizeCanvas(canvas);
+  window.addEventListener('resize', () => resizeCanvas(canvas));
+
   const gl = canvas.getContext('webgl');
 
   if (!gl) {
@@ -25,47 +28,73 @@ document.addEventListener('DOMContentLoaded', () => {
         uniform mat4 uModelViewMatrix;
         uniform mat4 uProjectionMatrix;
 
-        varying highp vec3 vLighting;
+        varying vec3 vNormal;
+        varying vec3 vFragPos;
 
         void main(void) {
-            gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-
-            // Apply lighting effect
-            highp vec3 ambientLight = vec3(0.3, 0.3, 0.3);
-            highp vec3 directionalLightColor = vec3(1, 1, 1);
-            highp vec3 directionalVector = normalize(vec3(0.85, 0.8, 0.75));
-
-            highp vec4 transformedNormal = uNormalMatrix * vec4(aVertexNormal, 1.0);
-
-            highp float directional = max(dot(transformedNormal.xyz, directionalVector), 0.0);
-            vLighting = ambientLight + (directionalLightColor * directional);
-        }
-    `;
+          vec4 fragPos = uModelViewMatrix * aVertexPosition;
+          vFragPos = fragPos.xyz;
+          vNormal = mat3(uNormalMatrix) * aVertexNormal;
+          gl_Position = uProjectionMatrix * fragPos;
+      }
+  `;
 
   // Fragment shader program
   const fsSource = `
-        varying highp vec3 vLighting;
+      precision highp float;
 
-        void main(void) {
-            gl_FragColor = vec4(vec3(1, 0.5, 0.3) * vLighting, 1.0);
-        }
-    `;
+      varying vec3 vNormal;
+      varying vec3 vFragPos;
+
+      uniform vec3 uLightPosition;
+      uniform vec3 uLightColor;
+      uniform vec3 uViewPosition;
+
+      uniform vec3 uObjectColor;
+      uniform float uShininess;
+
+      void main(void) {
+          vec3 norm = normalize(vNormal);
+          vec3 lightDir = normalize(uLightPosition - vFragPos);
+
+          // Componente Ambiente
+          float ambientStrength = 0.1;
+          vec3 ambient = ambientStrength * uLightColor;
+
+          // Componente Difuso
+          float diff = max(dot(norm, lightDir), 0.0);
+          vec3 diffuse = diff * uLightColor;
+
+          // Componente Especular
+          float specularStrength = 0.5;
+          vec3 viewDir = normalize(-vFragPos);
+          vec3 reflectDir = reflect(-lightDir, norm);
+          float spec = pow(max(dot(viewDir, reflectDir), 0.0), uShininess);
+          vec3 specular = specularStrength * spec * uLightColor;
+
+          // Combinação dos componentes
+          vec3 result = (ambient + diffuse + specular) * uObjectColor;
+          gl_FragColor = vec4(result, 1.0);
+      }
+  `;
 
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
   const programInfo = {
-    program: shaderProgram,
-    attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-      vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
-    },
-    uniformLocations: {
-      projectionMatrix: gl.getUniformLocation(
-        shaderProgram,
-        'uProjectionMatrix'
-      ),
-      modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-      normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
-    },
+      program: shaderProgram,
+      attribLocations: {
+          vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+          vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
+      },
+      uniformLocations: {
+          projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+          modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+          normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
+          lightPosition: gl.getUniformLocation(shaderProgram, 'uLightPosition'),
+          lightColor: gl.getUniformLocation(shaderProgram, 'uLightColor'),
+          viewPosition: gl.getUniformLocation(shaderProgram, 'uViewPosition'),
+          objectColor: gl.getUniformLocation(shaderProgram, 'uObjectColor'),
+          shininess: gl.getUniformLocation(shaderProgram, 'uShininess'),
+      },
   };
 
   console.log('Shader program initialized');
@@ -75,11 +104,11 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('Mesh loaded:', mesh);
 
   let xRot = 0,
-    yRot = 0,
-    zRot = 0;
+      yRot = 0,
+      zRot = 0;
   let xTrans = 0,
-    yTrans = 0,
-    zTrans = -6;
+      yTrans = 0,
+      zTrans = -6;
 
   document.addEventListener('keydown', (event) => {
     switch (event.code) {
@@ -115,6 +144,21 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
     }
   });
+
+  // Definir as propriedades da luz e do material
+  gl.useProgram(programInfo.program);
+
+  const lightPosition = [2.0, 2.0, 2.0]; // Posição da luz no espaço da visualização
+  const lightColor = [1.0, 1.0, 1.0];    // Cor da luz branca
+
+  const objectColor = [1.0, 0.5, 0.31];  // Cor do objeto
+  const shininess = 32.0;                // Fator de brilho
+
+  // Definir uniformes
+  gl.uniform3fv(programInfo.uniformLocations.lightPosition, lightPosition);
+  gl.uniform3fv(programInfo.uniformLocations.lightColor, lightColor);
+  gl.uniform3fv(programInfo.uniformLocations.objectColor, objectColor);
+  gl.uniform1f(programInfo.uniformLocations.shininess, shininess);
 
   function render() {
     drawScene(gl, programInfo, mesh, xRot, yRot, zRot, xTrans, yTrans, zTrans);
@@ -166,32 +210,35 @@ function loadMesh(gl) {
 
   // TODO: we should read this from a .obj file
   const objStr = `
-        v  1.000000 -1.000000 1.000000
-        v  1.000000 -1.000000 -1.000000
-        v  -1.000000 -1.000000 -1.000000
-        v  -1.000000 -1.000000 1.000000
-        v  1.000000 1.000000 0.999999
-        v  0.999999 1.000000 -1.000001
-        v  -1.000000 1.000000 -1.000000
-        v  -1.000000 1.000000 1.000000
-        vn 0.0000 -1.0000 0.0000
-        vn 0.0000 1.0000 0.0000
-        vn 1.0000 0.0000 0.0000
-        vn -1.0000 0.0000 -0.0000
-        vn 0.0000 0.0000 1.0000
-        vn 0.0000 0.0000 -1.0000
-        f 1//1 2//1 3//1
-        f 1//1 3//1 4//1
-        f 1//2 5//2 6//2
-        f 1//2 6//2 2//2
-        f 1//3 8//3 5//3
-        f 1//4 4//4 8//4
-        f 2//5 6//5 7//5
-        f 2//5 7//5 3//5
-        f 3//6 7//6 8//6
-        f 3//6 8//6 4//6
-        f 5//2 8//2 7//2
-        f 5//2 7//2 6//2
+v  1.0 -1.0  1.0
+v  1.0 -1.0 -1.0
+v -1.0 -1.0 -1.0
+v -1.0 -1.0  1.0
+v  1.0  1.0  1.0
+v  1.0  1.0 -1.0
+v -1.0  1.0 -1.0
+v -1.0  1.0  1.0
+
+vn  0.0 -1.0  0.0
+vn  0.0  1.0  0.0
+vn  1.0  0.0  0.0
+vn -1.0  0.0  0.0
+vn  0.0  0.0  1.0
+vn  0.0  0.0 -1.0
+
+# Faces
+f 1//1 2//1 3//1
+f 1//1 3//1 4//1
+f 5//2 8//2 7//2
+f 5//2 7//2 6//2
+f 1//3 5//3 6//3
+f 1//3 6//3 2//3
+f 2//6 6//6 7//6
+f 2//6 7//6 3//6
+f 3//4 7//4 8//4
+f 3//4 8//4 4//4
+f 4//5 8//5 5//5
+f 4//5 5//5 1//5
     `;
 
   if (typeof OBJ === 'undefined') {
@@ -264,6 +311,10 @@ function drawScene(
     normalMatrix
   );
 
+  const viewPosition = [0.0, 0.0, 0.0];
+  gl.uniform3fv(programInfo.uniformLocations.viewPosition, viewPosition);
+
+  // Configurar os buffers de posição
   {
     const vertexPosition = mesh.vertexBuffer;
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosition);
@@ -278,6 +329,7 @@ function drawScene(
     gl.enableVertexAttribArray(programInfo.attribLocations.vertexPosition);
   }
 
+  // Configurar os buffers de normal
   {
     const vertexNormal = mesh.normalBuffer;
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexNormal);
@@ -293,13 +345,15 @@ function drawScene(
   }
 
   {
-    const indices = mesh.indexBuffer;
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indices);
-    gl.drawElements(
-      gl.TRIANGLES,
-      mesh.indexBuffer.numItems,
-      gl.UNSIGNED_SHORT,
-      0
-    );
+   const indexBuffer = mesh.indexBuffer;
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.drawElements(gl.TRIANGLES, mesh.indexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
   }
+}
+
+function resizeCanvas(canvas) {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const gl = canvas.getContext('webgl');
+  gl.viewport(0, 0, canvas.width, canvas.height);
 }
