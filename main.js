@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
       viewPosition: gl.getUniformLocation(shaderProgram, 'uViewPosition'),
       objectColor: gl.getUniformLocation(shaderProgram, 'uObjectColor'),
       shininess: gl.getUniformLocation(shaderProgram, 'uShininess'),
-      isSelected: gl.getUniformLocation(shaderProgram, 'uIsSelected'), // Uniform de seleção
+      isSelected: gl.getUniformLocation(shaderProgram, 'uIsSelected'),
     },
   };
 
@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
       this.rotation = [0, 0, 0];
       this.position = [0, 0, 0];
       this.scale = [1, 1, 1];
+      this.color = [1.0, 0.5, 0.31];
     }
   }
 
@@ -156,36 +157,34 @@ document.addEventListener('DOMContentLoaded', () => {
   ].join('\n');
 
   const objStr2 = [
-    'v 3.0 -1.0  1.0',
-    'v 3.0 -1.0 -1.0',
-    'v 1.0 -1.0 -1.0',
-    'v 1.0 -1.0  1.0',
-    'v 3.0  1.0  1.0',
-    'v 3.0  1.0 -1.0',
-    'v 1.0  1.0 -1.0',
-    'v 1.0  1.0  1.0',
-    'vn 0.0 -1.0 0.0',
-    'vn 0.0  1.0 0.0',
-    'vn 1.0  0.0 0.0',
-    'vn -1.0  0.0 0.0',
-    'vn 0.0  0.0 1.0',
-    'vn 0.0  0.0 -1.0',
-    'f 1//1 2//1 3//1',
-    'f 1//1 3//1 4//1',
-    'f 5//2 8//2 7//2',
-    'f 5//2 7//2 6//2',
-    'f 1//3 5//3 6//3',
-    'f 1//3 6//3 2//3',
-    'f 2//6 6//6 7//6',
-    'f 2//6 7//6 3//6',
-    'f 3//4 7//4 8//4',
-    'f 3//4 8//4 4//4',
-    'f 4//5 8//5 5//5',
-    'f 4//5 5//5 1//5',
+    // Vértices
+    'v  0.0  1.0  0.0',  
+    'v -1.0 -1.0 -1.0',   
+    'v  1.0 -1.0 -1.0',  
+    'v  1.0 -1.0  1.0',  
+    'v -1.0 -1.0  1.0', 
+    'vn  0.0  0.4472 -0.8944',  
+    'vn  0.8944  0.4472  0.0',  
+    'vn -0.8944  0.4472  0.0', 
+    'vn  0.0 -1.0  0.0',       
+    'f 1//1 2//1 3//1',  
+    'f 1//2 3//2 4//2',   
+    'f 1//3 4//3 5//3',  
+    'f 2//4 5//4 4//4',   
+    'f 2//4 4//4 3//4',   
   ].join('\n');
 
-  objects.push(new SceneObject(gl, objStr1));
-  objects.push(new SceneObject(gl, objStr2));
+// Carregar os objetos
+objects.push(new SceneObject(gl, objStr1)); // Cubo
+objects.push(new SceneObject(gl, objStr2)); // Triângulo
+
+// Definir cores para cada objeto
+objects[0].color = [1.0, 0.5, 0.31]; // Cor para o cubo (laranja)
+objects[1].color = [0.0, 1.0, 0.0]; // Cor para o triângulo (verde)
+
+// Posicionar os objetos separadamente
+objects[0].position = [ -1.5, 0.0, 0.0 ]; // Cubo à esquerda
+objects[1].position = [ 1.5, 0.0, 0.0 ];  // Triângulo à direita
 
   console.log('Objects loaded:', objects);
 
@@ -296,24 +295,6 @@ function loadShader(gl, type, source) {
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     console.error(
-      'Erro na compilação do shader: ' + gl.getShaderInfoLog(shader)
-    );
-    gl.deleteShader(shader);
-    return null;
-  }
-
-  return shader;
-}
-
-
-function loadShader(gl, type, source) {
-  const shader = gl.createShader(type);
-
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error(
       'An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader)
     );
     gl.deleteShader(shader);
@@ -373,6 +354,9 @@ function drawScene(
   objects.forEach((obj, index) => {
     const isSelected = index === selectedObject;
     gl.uniform1i(programInfo.uniformLocations.isSelected, isSelected ? 1 : 0); 
+
+    // Definir a cor do objeto
+    gl.uniform3fv(programInfo.uniformLocations.objectColor, obj.color);
 
     const modelViewMatrix = mat4.create();
     mat4.translate(modelViewMatrix, modelViewMatrix, obj.position);
