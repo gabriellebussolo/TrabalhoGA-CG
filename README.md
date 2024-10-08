@@ -13,7 +13,7 @@ Haverá dois objetos na tela: um triângulo e um cubo. Será possível aplicar a
 * **Movimentar a câmera:** O usuário pode movimentar a posição da câmera e o local que ela está apontando nos eixos X, Y e Z.
 
 ### Pré-requisitos para rodar o projeto
-* JavScript
+* JavaScript
 
 ### Como rodar o Projeto
-Para rodar o projeto, deve-se abrir o arquivo index.html no seu navegador de preferência que suporte WebGL
+Para rodar o projeto, deve-se abrir o arquivo index.html no seu navegador de preferência que suporte WebGL.
